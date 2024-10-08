@@ -1,9 +1,13 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import seaborn as sns
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import Normalizer, MinMaxScaler
+from sklearn.metrics import (
+    confusion_matrix,
+    precision_recall_curve,
+    classification_report,
+)
 from sklearn.pipeline import Pipeline
 import tensorflow as tf
 
@@ -82,7 +86,7 @@ X_validate_transformed = pipeline.transform(X_validate)
 # ----------------------------------------------------------------
 # start TensorBorad
 import tensorboard
-# tensorboard --logdir=./logs
+
 # open in browser: http://localhost:6006/
 
 input_dim = X_train_transformed.shape[1]
@@ -139,9 +143,7 @@ save_model = tf.keras.callbacks.ModelCheckpoint(
     mode="min",
 )
 
-tensorboard = tf.keras.callbacks.TensorBoard(
-    f"logs/{log_subdir}", batch_size=BATCH_SIZE, update_freq="batch"
-)
+tensorboard = tf.keras.callbacks.TensorBoard(f"logs/{log_subdir}", update_freq="batch")
 
 # callbacks argument only takes a list
 cb = [early_stop, save_model, tensorboard]
@@ -189,6 +191,130 @@ plt.show()
 # ----------------------------------------------------------------
 # Setting a threshold for classification
 # ----------------------------------------------------------------
+# ? Generally speaking, you will have to prioritise what you find more important. This dilemma is commonly called the "recall vs precision" trade-off. If you want to increase recall, adjust the MAD's Z-Score threshold downwards, if you want recover precision, increase it.
+
+THRESHOLD = 3
+
+
+def mad_score(points):
+
+    m = np.median(points)
+    ad = np.abs(points - m)
+    mad = np.median(ad)
+
+    return 0.6745 * ad / mad
+
+
+z_scores = mad_score(mse)
+outliers = z_scores > THRESHOLD
+
+print(
+    f"Detected {np.sum(outliers):,} outliers in a total of {np.size(z_scores):,} operations [{np.sum(outliers)/np.size(z_scores):.2%}]."
+)
+
+
+# classification_report
+print(classification_report(y_test, outliers))
+
+"""
+              precision    recall  f1-score   support
+
+           0       1.00      0.97      0.98     84315
+           1       0.14      0.82      0.23       492
+
+    accuracy                           0.97     84807
+   macro avg       0.57      0.89      0.61     84807
+weighted avg       0.99      0.97      0.98     84807
+
+"""
+
+# ----------------------------------------------------------------
+# precision_recall_curve
+# ----------------------------------------------------------------
+# 设置阈值并评估
+precision, recall, thresholds = precision_recall_curve(y_test, z_scores)
+# 可视化或选择最佳阈值
+plt.figure(figsize=(8, 6))
+plt.plot(recall, precision, marker="o", label="Precision-Recall curve")
+plt.xlabel("Recall")
+plt.ylabel("Precision")
+plt.title("Precision-Recall Curve")
+plt.legend()
+plt.grid()
+plt.show()
+
+# 设置想要达到的召回率值
+desired_recall = 0.82  # 例如，想要达到90%的召回率
+
+# 初始化变量来存储最接近的精确率和阈值
+closest_recall = 0
+closest_precision = 0
+closest_threshold = 0
+
+# 遍历召回率和阈值，找到最接近desired_recall的值
+for i in range(len(recall)):
+    if abs(recall[i] - desired_recall) < abs(closest_recall - desired_recall):
+        closest_recall = recall[i]
+        closest_precision = precision[i]
+        closest_threshold = thresholds[i]
+
+# 打印结果
+print(f"为了达到 {desired_recall*100}% 的召回率，")
+print(f"对应的精确率是：{closest_precision}")
+print(f"需要设置的阈值是：{closest_threshold}")
+
+# 输出结果
+best_threshold = thresholds[np.argmax(precision + recall)]
+print(f"最佳阈值: {best_threshold:.2f}")
+
+
+# ----------------------------------------------------------------
+# Optional - Confusion matrix for cm code
+# ----------------------------------------------------------------
+import itertools
+
+# get (mis)classification
+cm = confusion_matrix(y_test, outliers)
+# true/false positives/negatives
+(tn, fp, fn, tp) = cm.flatten()
+
+print(
+    f"""The classifications using the MAD method with threshold={THRESHOLD} are as follows:
+{cm}
+
+% of transactions labeled as fraud that were correct (precision): {tp}/({fp}+{tp}) = {tp/(fp+tp):.2%}
+% of fraudulent transactions were caught succesfully (recall):    {tp}/({fn}+{tp}) = {tp/(fn+tp):.2%}"""
+)
+
+"""
+array([[81762,  2553],
+       [   89,   403]])
+"""
+
+classes = [0, 1]
+# create confusion matrix for cm
+plt.figure(figsize=(10, 10))
+plt.imshow(cm, interpolation="nearest", cmap=plt.cm.Blues)
+plt.title("Confusion matrix")
+plt.colorbar()
+tick_marks = np.arange(len(classes))
+plt.xticks(tick_marks, classes, rotation=45)
+plt.yticks(tick_marks, classes)
+
+thresh = cm.max() / 2.0
+for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+    plt.text(
+        j,
+        i,
+        format(cm[i, j]),
+        horizontalalignment="center",
+        color="white" if cm[i, j] > thresh else "black",
+    )
+plt.ylabel("True label")
+plt.xlabel("Predicted label")
+plt.grid(False)
+plt.show()
+
 
 # ----------------------------------------------------------------
 # Obtain the Latent Representations
@@ -216,9 +342,6 @@ print("Shape of latent representation:", latent_representation.shape)
 X = latent_representation[:, 0]
 y = latent_representation[:, 1]
 
-# plotting
-# import matplotlib as mpl
-# mpl.style.use("ggplot")
 
 plt.subplots(figsize=(8, 8))
 plt.scatter(X[labels == 0], y[labels == 0], s=1, c="g", alpha=0.3, label="Clean")
@@ -229,5 +352,5 @@ plt.legend(loc="best")
 plt.title("Latent Space Representation")
 
 # saving & displaying
-plt.savefig("latent_representation_2d")
+plt.savefig("../../reports/figures/latent_representation_2d.png")
 plt.show()
