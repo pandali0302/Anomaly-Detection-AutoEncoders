@@ -292,7 +292,6 @@ print(
 )
 
 
-
 classes = [0, 1]
 # create confusion matrix for cm
 plt.figure(figsize=(10, 10))
