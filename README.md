@@ -1,6 +1,13 @@
 Dataset from [Credit Card Fraud Detection](https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud) by ULB machine learning group.
 
-We are using Auto-Encoder for **Anomaly Detection**: Auto-encoders can be used to learn the normal behavior of the data and detect anomalies by identifying instances that cannot be well reconstructed (i.e., have high reconstruction error)
+When handling credit card fraud detection, class imbalance is a common and significant challenge, as fraudulent transactions typically make up only a small fraction of the total transactions. To address this issue, there are various methods to improve the model’s performance and better detect the minority class (i.e., fraudulent transactions). Below are some commonly used approaches:
+
+    - Data Processing: Techniques such as oversampling (e.g., SMOTE), undersampling, or data augmentation can be employed to balance the dataset.
+
+    - Model Adjustment: In algorithms like decision trees, random forests, and XGBoost, the class_weight='balanced' parameter can be used to automatically adjust the class weights.
+
+    - Anomaly Detection Models: Since fraudulent transactions are considered anomalies, unsupervised learning methods like Auto-Encoders can be used for fraud detection. These methods do not rely on labeled fraud data but instead learn the pattern of normal transactions, identifying any transactions that deviate from these patterns as anomalies.
+
 
 Auto-Encoders (AEs) are a type of unsupervised learning model primarily used for tasks like dimensionality reduction, feature learning, and anomaly detection. They are neural networks trained to reconstruct input data, making them effective at capturing key features of the data in a compressed representation.
 
