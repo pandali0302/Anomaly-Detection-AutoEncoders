@@ -143,7 +143,9 @@ save_model = tf.keras.callbacks.ModelCheckpoint(
     mode="min",
 )
 
-tensorboard = tf.keras.callbacks.TensorBoard(f"logs/{log_subdir}", update_freq="batch")
+tensorboard = tf.keras.callbacks.TensorBoard(
+    f"logs/{log_subdir}", batch_size=BATCH_SIZE, update_freq="batch"
+)
 
 # callbacks argument only takes a list
 cb = [early_stop, save_model, tensorboard]
@@ -217,14 +219,17 @@ print(
 print(classification_report(y_test, outliers))
 
 """
+Detected 3,523 outliers in a total of 84,807 operations [4.15%].
               precision    recall  f1-score   support
 
-           0       1.00      0.97      0.98     84315
-           1       0.14      0.82      0.23       492
+           0       1.00      0.96      0.98     84315
+           1       0.11      0.78      0.19       492
 
-    accuracy                           0.97     84807
-   macro avg       0.57      0.89      0.61     84807
-weighted avg       0.99      0.97      0.98     84807
+    accuracy                           0.96     84807
+   macro avg       0.55      0.87      0.59     84807
+weighted avg       0.99      0.96      0.98     84807
+
+
 
 """
 
@@ -287,8 +292,8 @@ print(
 )
 
 """
-array([[81762,  2553],
-       [   89,   403]])
+array([[81177,  3138],
+       [  107,   385]])
 """
 
 classes = [0, 1]
@@ -325,7 +330,8 @@ encoder.summary()
 
 # taking all the fraud, undersampling clean
 fraud = X_test_transformed[y_test == 1]
-clean = X_test_transformed[y_test == 0][:2000]
+# clean = X_test_transformed[y_test == 0][:2000]
+clean = X_test_transformed[y_test == 0]
 
 # combining arrays & building labels
 features = np.append(fraud, clean, axis=0)
@@ -352,5 +358,5 @@ plt.legend(loc="best")
 plt.title("Latent Space Representation")
 
 # saving & displaying
-plt.savefig("../../reports/figures/latent_representation_2d.png")
+# plt.savefig("../../reports/figures/latent_representation_2d.png")
 plt.show()
