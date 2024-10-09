@@ -291,10 +291,7 @@ print(
 % of fraudulent transactions were caught succesfully (recall):    {tp}/({fn}+{tp}) = {tp/(fn+tp):.2%}"""
 )
 
-"""
-array([[81177,  3138],
-       [  107,   385]])
-"""
+
 
 classes = [0, 1]
 # create confusion matrix for cm
@@ -330,8 +327,8 @@ encoder.summary()
 
 # taking all the fraud, undersampling clean
 fraud = X_test_transformed[y_test == 1]
-# clean = X_test_transformed[y_test == 0][:2000]
-clean = X_test_transformed[y_test == 0]
+clean = X_test_transformed[y_test == 0][:2000]
+
 
 # combining arrays & building labels
 features = np.append(fraud, clean, axis=0)
@@ -358,5 +355,5 @@ plt.legend(loc="best")
 plt.title("Latent Space Representation")
 
 # saving & displaying
-# plt.savefig("../../reports/figures/latent_representation_2d.png")
+plt.savefig("../../reports/figures/latent_representation_2d.png")
 plt.show()
